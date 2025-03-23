@@ -1,0 +1,9 @@
+/Datasets/
+**/*.txt
+**/*.pt
+**/*.pth
+**/*.csv
+**/__pycache__/
+**/*.ipynb_checkpoints/
+**/*.log
+.vscode/
