@@ -7,3 +7,8 @@
 **/*.ipynb_checkpoints/
 **/*.log
 .vscode/
+**/*.npy
+/models/
+/quant_models/
+/dat/
+/exp/
