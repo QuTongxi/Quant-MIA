@@ -8,7 +8,7 @@
 **/*.log
 .vscode/
 **/*.npy
-/models/
-/quant_models/
-/dat/
+models
+quant_models
+shadows
 /exp/

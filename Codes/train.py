@@ -24,7 +24,7 @@ from utils import *
 DEVICE = select_and_set_device()
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--config", default=True, type=bool)
+parser.add_argument("--config", default=False, type=bool)
 parser.add_argument("--lr", default=0.1, type=float)
 parser.add_argument("--epochs", default=100, type=int)
 parser.add_argument("--n_shadows", default=None, type=int)
@@ -36,6 +36,7 @@ parser.add_argument("--debug", action="store_true")
 parser.add_argument("--seed", default=42, type=int)
 parser.add_argument("--dataset", default='', type=str)
 parser.add_argument("--datapath", default='', type=str)
+parser.add_argument("--n_queries", default=2, type=int)
 
 temp_args, _ = parser.parse_known_args()
 if temp_args.config:
@@ -121,12 +122,18 @@ def run():
         sched.step()
 
     m.eval()
-    savedir = os.path.join(args.savedir, str(args.shadow_id))
+    if args.n_shadows is not None:
+        savedir = os.path.join(args.savedir, str(args.shadow_id))
+    else:
+        savedir = args.savedir
     os.makedirs(savedir, exist_ok=True)
     np.save(savedir + "/keep.npy", keep_bool)
     torch.save(m.state_dict(), savedir + "/model.pt")
     
     save_target_train_test_accuracy(m, train_dl, test_dl, args)
+    all_loader = get_train_loader(args.dataset, dpath=args.datapath, batchsize=128)
+    inference_and_score(args.dataset, args.datapath, savedir, args.n_queries, all_loader, m)
+    
 
 if __name__ == "__main__":
     run()

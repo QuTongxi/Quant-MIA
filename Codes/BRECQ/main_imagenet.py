@@ -10,7 +10,10 @@ from quant import *
 from data.imagenet import build_imagenet_data
 import pytorch_lightning as pl
 
-import sys; sys.path.append('../Utils')
+import sys
+dir = os.path.dirname(__file__)
+path = os.path.join(dir, '..', 'Utils')
+sys.path.append(path)
 from utils import *
 DEVICE = torch.device(select_and_set_device())
 
@@ -128,7 +131,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='running parameters',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('--config', default=True, type=bool)
+    parser.add_argument('--config', default=False, type=bool)
     # general parameters for data and model
     parser.add_argument('--seed', default=1005, type=int, help='random seed for results reproduction')
     parser.add_argument('--arch', default='resnet18', type=str, help='dataset name',
@@ -172,7 +175,8 @@ if __name__ == '__main__':
     temp_args, _ = parser.parse_known_args()
     if temp_args.config:
         args = parser.parse_args([])
-        update_args_from_config(args, config='../config.json')
+        conf = os.path.join(os.path.dirname(__file__), '../config.json')
+        update_args_from_config(args, config=conf)
         args = parser.parse_args(namespace=args)
     else:
         args = parser.parse_args()
@@ -195,7 +199,7 @@ if __name__ == '__main__':
     cnn.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
     cnn.maxpool = nn.Identity()
     cnn.to(DEVICE)
-    cnn.load_state_dict(torch.load(args.load, weights_only=True))
+    cnn.load_state_dict(torch.load(args.load, weights_only=True, map_location=DEVICE))
     cnn.eval()
     # build quantization parameters
     wq_params = {'n_bits': args.wbits, 'channel_wise': args.channel_wise, 'scale_method': 'mse', "symmetric": not args.asym}
@@ -271,6 +275,7 @@ if __name__ == '__main__':
                                                                validate_model(test_loader, qnn)))
      
     if args.save is not None:
+        os.makedirs(os.path.dirname(args.save), exist_ok=True)
         torch.save(qnn.state_dict(), args.save)
         save_train_test_accuracy(qnn, true_trainloader, test_loader, args)
         
@@ -292,5 +297,6 @@ if __name__ == '__main__':
         os.makedirs(dir, exist_ok=True)
         path = os.path.join(dir, f'logits.npy')
         np.save(path, logits_n)
-        
-    run_inference(args.nqueries, train_loader, qnn, args.logit_save_path)
+    
+    save_dir = os.path.dirname(args.save)    
+    inference_and_score(args.dataset,args.datapath,save_dir,args.nqueries,train_loader,qnn)

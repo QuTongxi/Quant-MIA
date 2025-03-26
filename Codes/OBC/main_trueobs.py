@@ -11,14 +11,16 @@ from modelutils import *
 from quant import *
 from trueobs import *
 
-path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../Utils')
-import sys; sys.path.append(path)
+import sys
+dir = os.path.dirname(__file__)
+path = os.path.join(dir, '..', 'Utils')
+sys.path.append(path)
 from utils import *
-DEVICE = torch.device(select_and_set_device())
+DEVICE = select_and_set_device()
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--config', default=True, type=bool)
+parser.add_argument('--config', default=False, type=bool)
 parser.add_argument('--model', type=str, default='rn18')
 parser.add_argument(
     '--compress', type=str, choices=['quant', 'nmprune', 'unstr', 'struct', 'blocked'], default='quant'
@@ -94,8 +96,8 @@ def get_model(dataset, load):
     model = resnet18(weights=None, num_classes=nclasses)
     model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
     model.maxpool = nn.Identity()
-    model.load_state_dict(torch.load(load,weights_only=True),strict=False)
     model.to(DEVICE)
+    model.load_state_dict(torch.load(load,weights_only=True,map_location=DEVICE),strict=False)   
     model.eval()
     return model
 
@@ -287,5 +289,7 @@ modelp = get_model(args.dataset, args.save)
 print('Evaluating ...', end=' ')
 print(f'{get_acc(modelp, testloader):.2f}')
 save_train_test_accuracy(modelp, true_trainloader, testloader, args)
-run_inference(args.nqueries, trainloader, modelp, args.logit_save_path)
+# run_inference(args.nqueries, trainloader, modelp, args.logit_save_path)
+save_dir = os.path.dirname(args.save)
+inference_and_score(args.dataset, args.datapath, save_dir, args.nqueries, trainloader, modelp)
 

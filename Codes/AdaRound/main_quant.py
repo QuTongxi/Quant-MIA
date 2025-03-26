@@ -7,13 +7,15 @@ import numpy as np
 from adaround import layer_reconstruction
 import os
 
-import sys; sys.path.append('../Utils')
+import sys; 
+dir = os.path.dirname(__file__)
+path = os.path.join(dir, '..', 'Utils')
+sys.path.append(path)
 from utils import *
-available_device = select_and_set_device()
-DEVICE = torch.device(available_device)
+DEVICE = select_and_set_device()
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('--config',default=True,type=bool)
+parser.add_argument('--config',default=False,type=bool)
 parser.add_argument('--seed',type=int,default=42)
 parser.add_argument('--load',type=str,default='')
 parser.add_argument('--datapath',type=str,default='')
@@ -70,7 +72,7 @@ else:
 model = models.resnet18(weights=None, num_classes=nclasses)
 model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
 model.maxpool = nn.Identity()
-model.load_state_dict(torch.load(args.load,weights_only=True))
+model.load_state_dict(torch.load(args.load,weights_only=True,map_location=DEVICE))
 model.to(DEVICE)
 model.eval()
 
@@ -141,6 +143,7 @@ accu = get_acc(model, testloader)
 print(f'evaluating: {accu:.2f}')
 
 if args.save:
+    os.makedirs(os.path.dirname(args.save), exist_ok=True)
     torch.save(model.state_dict(), args.save)
     save_train_test_accuracy(model, true_trainloader, testloader, args)
 
@@ -163,5 +166,6 @@ def run_inference(queries, train_dl, model, save_dir):
     path = os.path.join(dir, 'logits.npy')
     np.save(path, logits_n)
     
-run_inference(args.nqueries, trainloader, model, args.logit_save_path)
-
+# run_inference(args.nqueries, trainloader, model, args.logit_save_path)
+save_dir = os.path.dirname(args.save)
+inference_and_score(args.dataset, args.datapath, save_dir, args.nqueries, trainloader, model)

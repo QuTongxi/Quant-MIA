@@ -15,7 +15,6 @@
 # Modified copy by Chenxiang Zhang (orientino) of the original:
 # https://github.com/tensorflow/privacy/tree/master/research/mi_lira_2021
 
-
 import argparse
 import multiprocessing as mp
 import os
@@ -23,18 +22,25 @@ from pathlib import Path
 
 import numpy as np
 
-import sys; sys.path.append('./datasets')
-from datasets import Datautils as data
-available_device = data.select_best_gpu()
+import sys; sys.path.append('Utils')
+from utils import *
+available_device = select_best_gpu()
 if available_device.startswith("cuda"):
     os.environ['CUDA_VISIBLE_DEVICES'] = available_device.split(":")[1]
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--savedir", default='', type=str)
-parser.add_argument("--dpath",default='',type=str)
-parser.add_argument("--dataset",default='',type=str)
-args = parser.parse_args()
+parser.add_argument("--config", default=False, type=bool)
+parser.add_argument("--model_dir", default='./models/cifar100/', type=str)
+parser.add_argument("--dpath", default='../Datasets/cifar100/', type=str)
+parser.add_argument("--dataset", default='cifar100', type=str)
 
+temp_args, _ = parser.parse_known_args()
+if temp_args.config:
+    args = parser.parse_args([])
+    update_args_from_config(args, config='config.json')
+    args = parser.parse_args(namespace=args)
+else:
+    args = parser.parse_args()
 
 def load_one(path):
     """
@@ -61,16 +67,15 @@ def load_one(path):
     logit = np.log(y_true + 1e-45) - np.log(y_wrong + 1e-45)
     np.save(os.path.join(path, "scores.npy"), logit)
 
-
 def get_labels():
     if args.dataset == 'cifar10':
-        dataset = data.CIFAR10(root=args.dpath, train=True, download=False)
+        dataset = CIFAR10(root=args.dpath, train=True, download=False)
         return np.array(dataset.targets)
     elif args.dataset == 'cifar100':
-        dataset = data.CIFAR100(root=args.dpath, train=True, download=False)
+        dataset = CIFAR100(root=args.dpath, train=True, download=False)
         return np.array(dataset.targets)
     elif args.dataset == 'tiny-imagenet':
-        dataset = data.TinyImageNet(args.dpath, train=True, transform=None)
+        dataset = TinyImageNet(args.dpath, train=True, transform=None)
         all_labels = []
         for i in range(len(dataset)):
             _, label = dataset[i]
@@ -79,11 +84,9 @@ def get_labels():
     else:
         raise NotImplementedError
 
-
 def load_stats():
     with mp.Pool(8) as p:
-        p.map(load_one, [os.path.join(args.savedir, x) for x in os.listdir(args.savedir)])
-
+        p.map(load_one, [os.path.join(args.model_dir, x) for x in os.listdir(args.model_dir)])
 
 if __name__ == "__main__":
     load_stats()
