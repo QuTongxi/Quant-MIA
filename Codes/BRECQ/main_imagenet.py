@@ -131,7 +131,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='running parameters',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('--config', default=False, type=bool)
+    parser.add_argument('--config', default=True, type=bool)
     # general parameters for data and model
     parser.add_argument('--seed', default=1005, type=int, help='random seed for results reproduction')
     parser.add_argument('--arch', default='resnet18', type=str, help='dataset name',

@@ -1,53 +1,13 @@
 {
-    "train.py": {
-        "lr": 0.1,
-        "epochs": 100,
-        "n_shadows": null,
-        "shadow_id": 0,
-        "model": "resnet18",
-        "pkeep": 0.5,
-        "savedir": "./models/cifar100/",
-        "debug": false,
-        "seed": 442,
-        "dataset": "cifar100",
-        "datapath": "../Datasets/cifar100/"
-    },
     "main_trueobs.py": {
-        "seed": 442,
-        "load": "../models/cifar100/0/model.pt",
-        "datapath": "../../Datasets/cifar100/",
-        "wbits": 2,
-        "save": "../quant_models/cifar100/obc/w158model.pt",
-        "keep": "../models/cifar100/0/keep.npy",
-        "logit_save_path": "../dat/cifar100/",
-        "nqueries": 2,
-        "dataset": "cifar100",
         "last_layer_8bit": false,
         "asym": true
     },
     "main_imagenet.py": {
-        "seed": 442,
-        "load": "../models/cifar100/0/model.pt",
-        "datapath": "../../Datasets/cifar100/",
-        "wbits": 1.58,
-        "save": "../quant_models/cifar100/brecq/w158model.pt",
-        "keep": "../models/cifar100/0/keep.npy",
-        "logit_save_path": "../dat/cifar100",
-        "nqueries": 2,
-        "dataset": "cifar100",
         "last_layer_8bit": false,
         "asym": true
     },
     "main_quant.py": {
-        "seed": 442,
-        "load": "../models/cifar100/0/model.pt",
-        "datapath": "../../Datasets/cifar100/",
-        "wbits": 1.58,
-        "save": "../quant_models/cifar100/brecq/w158model.pt",
-        "keep": "../models/cifar100/0/keep.npy",
-        "logit_save_path": "../dat/cifar100",
-        "nqueries": 2,
-        "dataset": "cifar100",
         "last_layer_8bit": false,
         "asym": true
     }

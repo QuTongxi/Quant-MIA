@@ -20,7 +20,7 @@ DEVICE = select_and_set_device()
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--config', default=False, type=bool)
+parser.add_argument('--config', default=True, type=bool)
 parser.add_argument('--model', type=str, default='rn18')
 parser.add_argument(
     '--compress', type=str, choices=['quant', 'nmprune', 'unstr', 'struct', 'blocked'], default='quant'

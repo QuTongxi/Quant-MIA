@@ -177,8 +177,7 @@ def do_plot(fn, keep, scores, ntest, legend="", metric="auc", sweep_fn=sweep, **
 
     low = tpr[np.where(fpr < 0.001)[0][-1]]
 
-    print("Name %s Attack %s   AUC %.4f, Accuracy %.4f, TPR@0.1%%FPR of %.4f" % (args.name, legend, auc, acc, low))
-    with open('out_data.txt', 'a') as f:
+    with open('outdata.txt', 'a') as f:
         f.write("Name %s Attack %s   AUC %.4f, Accuracy %.4f, TPR@0.1%%FPR of %.4f\n" % (args.name, legend, auc, acc, low))
     metric_text = ""
     if metric == "auc":
@@ -215,13 +214,13 @@ def fig_fpr_tpr():
     plt.show()
 
 def do_analyze():
-    do_plot(generate_ours, keep, scores, 1, "Ours (online)\n", metric="auc")
+    do_plot(generate_ours, keep, scores, 1, "Online\n", metric="auc")
 
-    do_plot(functools.partial(generate_ours, fix_variance=True), keep, scores, 1, "Ours (online, fixed variance)\n", metric="auc")
+    do_plot(functools.partial(generate_ours, fix_variance=True), keep, scores, 1, "Online fixed\n", metric="auc")
 
-    do_plot(functools.partial(generate_ours_offline), keep, scores, 1, "Ours (offline)\n", metric="auc")
+    do_plot(functools.partial(generate_ours_offline), keep, scores, 1, "Offline\n", metric="auc")
 
-    do_plot(functools.partial(generate_ours_offline, fix_variance=True), keep, scores, 1, "Ours (offline, fixed variance)\n", metric="auc")
+    do_plot(functools.partial(generate_ours_offline, fix_variance=True), keep, scores, 1, "Offline fixed\n", metric="auc")
 
     do_plot(generate_global, keep, scores, 1, "Global threshold\n", metric="auc")    
 

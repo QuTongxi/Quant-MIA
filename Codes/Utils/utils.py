@@ -218,6 +218,7 @@ def save_train_test_accuracy(model, true_trainloader, testloader, args):
     
     content = f"""[{fname_dict[fname]}] dataset: {args.dataset} wbits: {args.wbits}
 Train Accu.: {train_acc:.4f} Test Accu.: {test_acc:.4f}
+
 """
     
     print(content)
@@ -236,6 +237,7 @@ def save_target_train_test_accuracy(model, true_trainloader, testloader, args):
     
     content = f"""[{fname_dict[fname]}] dataset: {args.dataset} epochs: {args.epochs} pkeep: {args.pkeep}
 Train Accu.: {train_acc:.4f} Test Accu.: {test_acc:.4f}
+
 """
     
     print(content)

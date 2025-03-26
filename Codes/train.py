@@ -41,7 +41,8 @@ parser.add_argument("--n_queries", default=2, type=int)
 temp_args, _ = parser.parse_known_args()
 if temp_args.config:
     args = parser.parse_args([])
-    update_args_from_config(args, config='config.json')
+    conf = os.path.join(os.path.dirname(__file__), 'config.json')
+    update_args_from_config(args, config=conf)
     args = parser.parse_args(namespace=args)
 else:
     args = parser.parse_args()
