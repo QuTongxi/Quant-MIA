@@ -20,7 +20,7 @@ DEVICE = select_and_set_device()
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--config', default=True, type=bool)
+parser.add_argument('--config', action='store_true')
 parser.add_argument('--model', type=str, default='rn18')
 parser.add_argument(
     '--compress', type=str, choices=['quant', 'nmprune', 'unstr', 'struct', 'blocked'], default='quant'
@@ -60,15 +60,11 @@ parser.add_argument('--nqueries',type=int,default=2)
 parser.add_argument('--dataset',type=str,default='tiny-imagenet')
 parser.add_argument('--last_layer_8bit', action='store_true')
 parser.add_argument('--bnt-batches', type=int, default=100)
-
-temp_args, _ = parser.parse_known_args()
-if temp_args.config:
-    args = parser.parse_args([])
-    path_to_config = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config.json')
-    update_args_from_config(args, config=path_to_config)
+   
+args = parser.parse_args()
+if args.config:
+    update_args_from_config(args)
     args = parser.parse_args(namespace=args)
-else:
-    args = parser.parse_args()
 
 seed_all(args.seed)
 dataloader, testloader = get_dataloaders_with_keepfile(args.dataset, args.datapath, args.nsamples, 128, args.keep)

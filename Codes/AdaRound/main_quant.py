@@ -15,7 +15,7 @@ from utils import *
 DEVICE = select_and_set_device()
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('--config',default=True,type=bool)
+parser.add_argument('--config',action='store_true')
 parser.add_argument('--seed',type=int,default=42)
 parser.add_argument('--load',type=str,default='')
 parser.add_argument('--datapath',type=str,default='')
@@ -28,14 +28,11 @@ parser.add_argument('--nqueries',type=int,default=2)
 parser.add_argument('--dataset',type=str,default='tiny-imagenet')
 parser.add_argument('--last_layer_8bit', action='store_true')
 
-temp_args, _ = parser.parse_known_args()
-if temp_args.config:
-    args = parser.parse_args([])
-    conf = os.path.join(os.path.dirname(__file__), '..', 'config.json')
-    update_args_from_config(args, config=conf)
+args = parser.parse_args()
+if args.config:
+    update_args_from_config(args)
     args = parser.parse_args(namespace=args)
-else:
-    args = parser.parse_args()
+    
 
 seed_all(args.seed)
 

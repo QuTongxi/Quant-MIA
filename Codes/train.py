@@ -24,7 +24,7 @@ from utils import *
 DEVICE = select_and_set_device()
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--config", default=False, type=bool)
+parser.add_argument("--config",action="store_true")
 parser.add_argument("--lr", default=0.1, type=float)
 parser.add_argument("--epochs", default=100, type=int)
 parser.add_argument("--n_shadows", default=None, type=int)
@@ -38,14 +38,10 @@ parser.add_argument("--dataset", default='', type=str)
 parser.add_argument("--datapath", default='', type=str)
 parser.add_argument("--n_queries", default=2, type=int)
 
-temp_args, _ = parser.parse_known_args()
-if temp_args.config:
-    args = parser.parse_args([])
-    conf = os.path.join(os.path.dirname(__file__), 'config.json')
-    update_args_from_config(args, config=conf)
+args = parser.parse_args()
+if args.config:
+    update_args_from_config(args)
     args = parser.parse_args(namespace=args)
-else:
-    args = parser.parse_args()
 
 def run():
     pl.seed_everything(args.seed)

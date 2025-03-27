@@ -56,6 +56,12 @@ cifar100_test_trans = transforms.Compose(
 )
 
 my_seed = None
+fname_dict = {
+    'main_quant.py': 'AdaRound',
+    'main_trueobs.py': 'OBC',
+    'train.py': 'Full',
+    'main_imagenet.py': 'BRECQ'
+}
 
 def seed_all(seed):
     global my_seed
@@ -171,22 +177,35 @@ def select_and_set_device(dev_id = -1):
             
     return 'cuda' if torch.cuda.is_available() else 'cpu'
 
-def update_args_from_config(args, config='../config.json'):
+def update_args_from_config(args, config=None):
     import inspect
-    import json
+    import yaml
+    
+    if config is None:
+        config_path = os.path.join(os.path.dirname(__file__), '..', 'config.yaml')
+    else:
+        config_path = config
+
+    # Get the caller's filename
     frame = inspect.stack()[1]
     module = inspect.getmodule(frame[0])
     caller_filename = os.path.basename(module.__file__)
-    
-    with open(config, 'r') as f:
-        config_args = json.load(f)
-        print('load from config file')
-    
-    if caller_filename in config_args:
-        caller_config = config_args[caller_filename]
+    true_name = fname_dict[caller_filename]
+
+    # Load the YAML configuration file
+    with open(config_path, 'r') as f:
+        config_args = yaml.safe_load(f)
+        print('Loaded configuration from YAML file')
+
+    # Check if the caller's filename exists in the configuration
+    if true_name in config_args:
+        caller_config = config_args[true_name]
         for key, value in caller_config.items():
-            if hasattr(args, key):
+            # Only update args if the value is not null
+            if value is not None and hasattr(args, key):
                 setattr(args, key, value)
+    else:
+        raise ValueError(f'Configuration for {true_name} not found in the YAML file')
 
 @torch.no_grad()
 def get_acc(model, test_loader):
@@ -199,12 +218,7 @@ def get_acc(model, test_loader):
     acc = torch.sum(acc) / len(acc)
     return acc.item() * 100
 
-fname_dict = {
-    'main_quant.py': 'AdaRound',
-    'main_trueobs.py': 'OBC',
-    'train.py': 'Full',
-    'main_imagenet.py': 'BRECQ'
-}
+
 
 
 def save_train_test_accuracy(model, true_trainloader, testloader, args):
@@ -238,8 +252,7 @@ def save_target_train_test_accuracy(model, true_trainloader, testloader, args):
     content = f"""[{fname_dict[fname]}] dataset: {args.dataset} epochs: {args.epochs} pkeep: {args.pkeep}
 Train Accu.: {train_acc:.4f} Test Accu.: {test_acc:.4f}
 
-"""
-    
+"""   
     print(content)
     filename = os.path.join(os.path.dirname(__file__), '..', 'output.txt')
     with open(filename, 'a') as f:
@@ -392,5 +405,4 @@ def run_inference(queries, train_dl, model, save_dir):
 def inference_and_score(dataset, datapath, save_dir, queries, train_dl, model):
     run_inference(queries, train_dl, model, save_dir)
     load_one(save_dir, dataset, datapath)
-    
-    
+
