@@ -105,7 +105,7 @@ def plot():
                 )
                 
 def Quant_MIA():
-    # target_model_trainer()
+    target_model_trainer()
     shadow_models_trainer()
     quantizer()
     plot()    
@@ -145,6 +145,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()    
     datapath = os.path.abspath(args.datapath)
+    
+    with open(os.path.join(work_dir, 'outdata.txt'), 'a') as f:
+        f.write(f'args: {args}\n')
     
     if args.pkeeps is not None:
         test_pkeep(args.pkeeps)
