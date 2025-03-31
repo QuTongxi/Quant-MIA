@@ -47,8 +47,6 @@ def target_model_trainer(pkeep = 0.5):
     
 def quantizer():
     for method in quant_methods.keys():    
-        if method == 'AdaRound':
-            continue
         for bit in args.quant_range: 
             command = [
                     'python',
@@ -157,6 +155,8 @@ if __name__ == '__main__':
         skip_shadows = True
     
     for idx in range(args.cycle_times):    
+        with open(os.path.join(work_dir, 'outdata.txt'), 'a') as f:
+            f.write(f'\nCycle {idx}:\n')
         if args.seed is None:
             seed = random.randint(0,10000)
         else:
