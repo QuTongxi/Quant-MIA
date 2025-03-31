@@ -7,16 +7,28 @@ import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(description="Analyze AUC, Accuracy, and TPR from log files.")
 parser.add_argument(
-    "--file_path",
+    "--metrics",
     type=str,
     default="outdata.txt",
     help="Path to the log file containing AUC, Accuracy, and TPR data.",
+)
+parser.add_argument(
+    "--accuracy",
+    type=str,
+    default="output.txt",
+    help="Path to the log file containing train and test accuracy.",
+)
+parser.add_argument(
+    "--dataset",
+    type=str,
+    default="cifar100",
+    help="the dataset where you test the accuracy on",
 )
 args = parser.parse_args()
 
 data = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: {'AUC': [], 'Accuracy': [], 'TPR': []})))
 
-with open(args.file_path, "r", encoding="utf-8") as file:
+with open(args.metrics, "r", encoding="utf-8") as file:
     lines = file.readlines()
 
 current_key = None
@@ -152,7 +164,133 @@ def plot_results(result_dict, mode, fixed=False):
     # Generate the plot
     save_path = f"plots/{mode.lower()}{'_fixed' if fixed else ''}_plot.png"
     plot_grouped_bar_chart(plot_dict, full_prec, save_path)
+
+def parse_log_file(file_path):
+    full_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+    quant_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list))))
     
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+    
+    current_method = None
+    current_dataset = None
+    current_pkeep = None
+    current_wbits = None
+    
+    for line in lines:
+        # Match Full model line
+        full_match = re.match(r'\[Full\] dataset: ([\w-]+) epochs: \d+ pkeep: ([\d.]+)', line)
+        if full_match:
+            current_method = 'Full'
+            current_dataset = full_match.group(1)
+            current_pkeep = full_match.group(2)
+            continue
+        
+        # Match Quantized model line
+        quant_match = re.match(r'\[(\w+)\] dataset: ([\w-]+) wbits: ([\d.]+)', line)
+        if quant_match:
+            current_method = quant_match.group(1)
+            current_dataset = quant_match.group(2)
+            current_wbits = quant_match.group(3)
+            continue
+        
+        # Match accuracy lines
+        accu_match = re.match(r'Train Accu.: ([\d.]+) Test Accu.: ([\d.]+)', line)
+        if accu_match:
+            train_acc = float(accu_match.group(1))
+            test_acc = float(accu_match.group(2))
+            
+            if current_method == 'Full':
+                full_dict[current_dataset][current_pkeep]['train'].append(train_acc)
+                full_dict[current_dataset][current_pkeep]['test'].append(test_acc)
+            else:
+                quant_dict[current_dataset][current_method][current_wbits]['train'].append(train_acc)
+                quant_dict[current_dataset][current_method][current_wbits]['test'].append(test_acc)
+    
+    return dict(full_dict), dict(quant_dict)
+
+
+def get_mean_for_accu(data:dict):
+    for k1, v1 in data.items():
+        for k2, v2 in v1.items():
+            for k3, v3 in v2.items():
+                if isinstance(v3, dict):
+                    # quant_dict
+                    for k4, v4 in v3.items():
+                        data[k1][k2][k3][k4] = {'mean' : np.mean(v4), 'std' : np.std(v4)}
+                else:
+                    data[k1][k2][k3] = {'mean' : np.mean(v3), 'std' : np.std(v3)}
+                    
+    return data
+
+def prepare_for_accuracy_plot(full, quant, dataset, pkeep='0.5'):
+    plot_args = {'methods':[], 'bits':[], 'mean':{}, 'std':{}, 'full_mean':0.0, 'full_std':0.0}
+    plot_args['methods'] = list(quant[dataset].keys())
+    plot_args['bits'] = list(next(iter(quant[dataset].values())).keys())
+    
+    for method, v1 in quant[dataset].items():
+        mean_data, std_data = [], []
+        for bit, v2 in v1.items():
+            mean_data.append(v2['test']['mean'])
+            std_data.append(v2['test']['std'])
+            
+        plot_args['mean'][method] = mean_data
+        plot_args['std'][method] = std_data
+        
+    plot_args['full_mean'] = full[dataset][pkeep]['test']['mean']
+    plot_args['full_std'] = full[dataset][pkeep]['test']['std']
+    return plot_args
+        
+def plot_accuracy(args, save_path='plots/accuracy_plot.png'):
+    methods = args['methods']
+    bits = args['bits']
+    test_means = args['mean']
+    test_stds = args['std']
+
+    full_mean = args['full_mean']
+    full_std = args['full_std']
+    
+    y_min = min(min(min(values) for values in test_means.values()), full_mean) - 5
+    y_max = max(max(max(values) for values in test_means.values()), full_mean) + 5
+    
+    y_min = max(y_min, 0)
+    y_max = min(y_max, 100)
+    
+    plt.figure(figsize=(8, 6))
+    for method in methods:
+        plt.errorbar(bits, test_means[method], yerr=test_stds[method], label=method,
+                    marker='o', capsize=5, linestyle='-', alpha=0.8)
+
+    plt.axhline(y=full_mean, color='r', linestyle='--', label='FULL Mean')
+    plt.fill_between(bits, full_mean - full_std, full_mean + full_std, color='r', alpha=0.2, label='FULL Std')
+
+    plt.xlabel('Bits')
+    plt.ylabel('Test Accuracy (%)')
+    plt.title('Quantization Test Accuracy with Error Bars')
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.ylim(y_min, y_max)
+    
+    os.makedirs(os.path.dirname(save_path),exist_ok=True)
+    plt.savefig(save_path, dpi=300)
+
+
+def print_test_accuracy(data:dict):
+    for k1, v1 in data.items():
+        print(f'{k1}')
+        for k2, v2 in v1.items():
+            print(f'  {k2}')
+            for k3, v3 in v2.items():
+                print(f'    {k3}', end='')                
+                if isinstance(next(iter(v3.values())), dict):
+                    # quant_dict
+                    print()
+                    for k4, v4 in v3.items():
+                        print(f'    {k4} : {data[k1][k2][k3][k4]['mean']}  |  {data[k1][k2][k3][k4]['std']}')
+                else:
+                    print(f': {data[k1][k2][k3]['mean']}  |  {data[k1][k2][k3]['std']}')
+                    
+                        
 if __name__ == "__main__":
     
     os.makedirs('plots', exist_ok=True)
@@ -161,3 +299,22 @@ if __name__ == "__main__":
     plot_results(results, 'Offline')
     plot_results(results, 'Online', fixed=True)
     plot_results(results, 'Offline', fixed=True)
+    
+    full, quant = parse_log_file(args.accuracy)
+    
+    print(full['cifar100']['0.5']['test'])
+    
+    full = get_mean_for_accu(full)
+    quant = get_mean_for_accu(quant)
+    
+    # full[<dataset>][<pkeep>][train/test]
+    # quant[<dataset>][<method>][<wbits>][train/test]
+    def print_accu():
+        print('-'*25, 'full', '-'*25)
+        print_test_accuracy(full)
+        print('-'*25, 'quant', '-'*25)
+        print_test_accuracy(quant)
+    # print_accu()  
+    
+    plot_args = prepare_for_accuracy_plot(full, quant, dataset=args.dataset)
+    plot_accuracy(plot_args)  
