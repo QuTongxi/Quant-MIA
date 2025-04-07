@@ -302,7 +302,7 @@ if __name__ == "__main__":
     
     full, quant = parse_log_file(args.accuracy)
     
-    print(full['cifar100']['0.5']['test'])
+    # print(full['cifar100']['0.5']['test'])
     
     full = get_mean_for_accu(full)
     quant = get_mean_for_accu(quant)

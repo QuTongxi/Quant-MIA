@@ -5,6 +5,8 @@ import os
 
 work_dir = os.path.abspath(os.path.dirname(__file__))
 quant_methods = {'AdaRound':'main_quant.py', 'BRECQ':'main_imagenet.py', 'OBC':'main_trueobs.py'}
+# quant_methods = {'AdaRound':'main_quant.py'}
+
 bit_str = {1:'1', 1.58:'log3', 2:'2', 3:'3', 4:'4'}
 datapath = ''
 seed = 0
@@ -161,6 +163,8 @@ if __name__ == '__main__':
             seed = random.randint(0,10000)
         else:
             seed = args.seed
+            
+        print(f'seed: {seed}')
         Quant_MIA()
     
 
