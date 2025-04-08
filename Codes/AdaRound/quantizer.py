@@ -190,6 +190,7 @@ class QuantModule(nn.Module):
             self.quant_weight = nn.Parameter(weight)
             self.quant_bias = nn.Parameter(bias)
         else:
+            # print('use original weight')
             weight = self.org_weight
             bias = self.org_bias
         out = self.fwd_func(input, weight, bias, **self.fwd_kwargs)
