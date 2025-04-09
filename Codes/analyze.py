@@ -299,6 +299,7 @@ if __name__ == "__main__":
     plot_results(results, 'Offline')
     plot_results(results, 'Online', fixed=True)
     plot_results(results, 'Offline', fixed=True)
+    plot_results(results, 'Global threshold')
     
     full, quant = parse_log_file(args.accuracy)
     

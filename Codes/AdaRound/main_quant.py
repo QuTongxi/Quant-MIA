@@ -136,11 +136,11 @@ for name, module in model.named_modules():
             print('Reconstruction for layer {}'.format(name))
             layer_reconstruction(model, module, cali_data)    
 
+model.eval()
 for module in model.modules():
     if isinstance(module, QuantModule):
         module.set_quant_state(weight_quant=True, act_quant=False)
 
-model.eval()
 accu = get_acc(model, testloader)
 print(f'evaluating: {accu:.2f}')
 
