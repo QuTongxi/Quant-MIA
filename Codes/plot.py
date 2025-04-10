@@ -54,6 +54,43 @@ def sweep(score, x):
     acc = np.max(1 - (fpr + (1 - tpr)) / 2)
     return fpr, tpr, auc(fpr, tpr), acc
 
+import numpy as np
+from sklearn.metrics import roc_curve
+
+def get_best_f1_score(x, score):
+    """
+    给定真实标签 x 和模型得分 score，计算所有可能阈值下的 F1-score，
+    并返回最大 F1-score、对应的最佳阈值和 Precision。
+    """
+    fpr, tpr, thresholds = roc_curve(x, -score)
+
+    best_f1 = 0
+    best_threshold = None
+    best_precision = 0
+
+    for threshold in thresholds:
+        y_pred = (score <= -threshold).astype(int)  # predict positive if score <= -threshold
+
+        tp = np.sum((y_pred == 1) & (x == 1))
+        fp = np.sum((y_pred == 1) & (x == 0))
+        fn = np.sum((y_pred == 0) & (x == 1))
+
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall    = tp / (tp + fn) if (tp + fn) > 0 else 0
+
+        if precision + recall == 0:
+            f1 = 0
+        else:
+            f1 = 2 * precision * recall / (precision + recall)
+
+        if f1 > best_f1:
+            best_f1 = f1
+            best_threshold = threshold
+            best_precision = precision
+
+    return best_f1, best_threshold, best_precision
+
+
 def load_data():
     """
     Load our saved scores and then put them into a big matrix.
@@ -176,6 +213,10 @@ def do_plot(fn, keep, scores, ntest, legend="", metric="auc", sweep_fn=sweep, **
     fpr, tpr, auc, acc = sweep_fn(np.array(prediction), np.array(answers, dtype=bool))
 
     low = tpr[np.where(fpr < 0.001)[0][-1]]
+    
+    f1_score, threshold, prec = get_best_f1_score(np.array(answers, dtype=bool), np.array(prediction))
+    with open('f1_scores.txt', 'a') as f1:
+        f1.write("Name %s Attack %s   F1 Score %.4f, Threshold %.4f, Precision %.4f\n" % (args.name, legend, f1_score, threshold, prec))
 
     with open('outdata.txt', 'a') as f:
         f.write("Name %s Attack %s   AUC %.4f, Accuracy %.4f, TPR@0.1%%FPR of %.4f\n" % (args.name, legend, auc, acc, low))

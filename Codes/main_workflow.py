@@ -32,7 +32,11 @@ def shadow_models_trainer():
         subprocess.run(command,check=True)
     skip_shadows = True
 
-def target_model_trainer(pkeep = 0.5):
+def target_model_trainer():
+    if args.pkeep is not None:
+        pkeep = args.pkeep
+    else:
+        pkeep = 0.5
     command = [
             'python', 
             os.path.join(work_dir, 'train.py'), 
@@ -108,12 +112,7 @@ def Quant_MIA():
     target_model_trainer()
     shadow_models_trainer()
     quantizer()
-    plot()    
-    
-def test_pkeep(pkeep_list):
-    for pkeep in pkeep_list:
-        target_model_trainer(pkeep)
-        quantizer()
+    plot()   
 
 
 if __name__ == '__main__':            
@@ -137,21 +136,27 @@ if __name__ == '__main__':
     parser.add_argument(
         '--auto_last_8bit', help='Use 8bit quantization for last layer', action='store_true')
     parser.add_argument(
-        '--pkeeps', help='Test pkeep', type=float, nargs='+' ,default=None)
+        '--pkeep', help='Test pkeep', type=float, default=0.5)
     parser.add_argument(
         '--skip_shadows', help='Skip training shadow models', action='store_true')
     parser.add_argument(
         '--last_layer_8bit', help='Use 8bit quantization for last layer, make sure auto_last_8bit is false', action='store_true')
+    parser.add_argument("--command", type=str, default=None, help="Function name to call")
 
     args = parser.parse_args()    
     datapath = os.path.abspath(args.datapath)
     
+    if args.command is not None:
+        func_name = args.command
+        if func_name in globals() and callable(globals()[func_name]):
+            globals()[func_name]()  # 调用函数
+        else:
+            print(f"Error: Function '{func_name}' not found.")
+            exit(1) 
+        exit(0)       
+    
     with open(os.path.join(work_dir, 'outdata.txt'), 'a') as f:
         f.write(f'args: {args}\n')
-    
-    if args.pkeeps is not None:
-        test_pkeep(args.pkeeps)
-        exit()
         
     if args.skip_shadows:
         skip_shadows = True

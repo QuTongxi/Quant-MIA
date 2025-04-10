@@ -8,7 +8,7 @@ Full:
   dataset: null           # Dataset name (e.g., cifar10, cifar100, tiny-imagenet)
   datapath: null          # Path to the dataset
   lr: 0.1                 # Learning rate
-  epochs: 1             # Number of training epochs
+  epochs: 160             # Number of training epochs
   model: "resnet18"       # Model architecture
   n_queries: 2            # Number of queries
 
