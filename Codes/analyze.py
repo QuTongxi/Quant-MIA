@@ -7,13 +7,13 @@ import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(description="Analyze AUC, Accuracy, and TPR from log files.")
 parser.add_argument(
-    "--metrics",
+    "metrics",
     type=str,
     default="outdata.txt",
     help="Path to the log file containing AUC, Accuracy, and TPR data.",
 )
 parser.add_argument(
-    "--accuracy",
+    "accuracy",
     type=str,
     default="output.txt",
     help="Path to the log file containing train and test accuracy.",
@@ -35,7 +35,7 @@ current_key = None
 
 for line in lines:
     line = line.strip()
-    if line.startswith("Name"):  # 解析 Name 和 Attack 组成的 key
+    if line.startswith("Name"):
         pattern = r"Name\s+(.*?)\s+Attack\s+(.*)"
         match = re.search(pattern, line)
         
@@ -46,7 +46,6 @@ for line in lines:
 
         current_key = f"{quant} {wbits} {attack}"
     else:
-        # 匹配 AUC, Accuracy, TPR 值
         match = re.search(r"AUC ([\d.]+), Accuracy ([\d.]+), TPR@0.1%FPR of ([\d.]+)", line)
         if match and current_key:
             auc, accu, tpr = map(float, match.groups())
@@ -303,13 +302,10 @@ if __name__ == "__main__":
     
     full, quant = parse_log_file(args.accuracy)
     
-    # print(full['cifar100']['0.5']['test'])
-    
     full = get_mean_for_accu(full)
     quant = get_mean_for_accu(quant)
     
-    # full[<dataset>][<pkeep>][train/test]
-    # quant[<dataset>][<method>][<wbits>][train/test]
+
     def print_accu():
         print('-'*25, 'full', '-'*25)
         print_test_accuracy(full)
