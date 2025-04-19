@@ -34,7 +34,7 @@ python main_workflow.py cifar100 path/to/dataset --use_config
 ### Making a plot
 After you get your results in `Codes/outdata.txt`, you can run the following command to make the plots.
 ```bash
-python analyze.py --file_path outdata.txt
+python analyze.py outdata.txt output.txt --dataset cifar100
 ```
 
 ## Project Structure  
