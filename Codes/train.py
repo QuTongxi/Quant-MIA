@@ -1,9 +1,9 @@
 # PyTorch implementation of
 # https://github.com/tensorflow/privacy/blob/master/research/mi_lira_2021/train.py
-#
-# author: Chenxiang Zhang (orientino)
+
 import argparse
 import os
+import sys
 import time
 from pathlib import Path
 
@@ -16,15 +16,16 @@ from torch.utils.data import DataLoader
 from torchvision import models
 from tqdm import tqdm
 
-
-upath = os.path.abspath(os.path.join(os.path.dirname(__file__), './Utils'))
-import sys; sys.path.append(upath)
 from utils import *
+
+upath = os.path.abspath(os.path.join(os.path.dirname(__file__), "./Utils"))
+
+sys.path.append(upath)
 
 DEVICE = select_and_set_device()
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--config",action="store_true")
+parser.add_argument("--config", action="store_true")
 parser.add_argument("--lr", default=0.1, type=float)
 parser.add_argument("--epochs", default=100, type=int)
 parser.add_argument("--n_shadows", default=None, type=int)
@@ -34,8 +35,8 @@ parser.add_argument("--pkeep", default=0.5, type=float)
 parser.add_argument("--savedir", default="", type=str)
 parser.add_argument("--debug", action="store_true")
 parser.add_argument("--seed", default=42, type=int)
-parser.add_argument("--dataset", default='', type=str)
-parser.add_argument("--datapath", default='', type=str)
+parser.add_argument("--dataset", default="", type=str)
+parser.add_argument("--datapath", default="", type=str)
 parser.add_argument("--n_queries", default=2, type=int)
 
 args = parser.parse_args()
@@ -43,21 +44,30 @@ if args.config:
     update_args_from_config(args)
     args = parser.parse_args(namespace=args)
 
+
 def run():
     pl.seed_everything(args.seed)
 
     # Dataset
     nclasses = 0
     seed_all(args.seed)
-    if args.dataset == 'cifar10':
+    if args.dataset == "cifar10":
         nclasses = 10
-        train_ds = CIFAR10(args.datapath, train=True, transform=cifar10_train_trans, download=True)
-        test_ds = CIFAR10(args.datapath, train=False, transform=cifar10_test_trans, download=True) 
-    elif args.dataset == 'cifar100':
+        train_ds = CIFAR10(
+            args.datapath, train=True, transform=cifar10_train_trans, download=True
+        )
+        test_ds = CIFAR10(
+            args.datapath, train=False, transform=cifar10_test_trans, download=True
+        )
+    elif args.dataset == "cifar100":
         nclasses = 100
-        train_ds = CIFAR100(args.datapath, train=True, transform=cifar100_train_trans, download=True)
-        test_ds = CIFAR100(args.datapath, train=False, transform=cifar100_test_trans, download=True)
-    elif args.dataset == 'tiny-imagenet':
+        train_ds = CIFAR100(
+            args.datapath, train=True, transform=cifar100_train_trans, download=True
+        )
+        test_ds = CIFAR100(
+            args.datapath, train=False, transform=cifar100_test_trans, download=True
+        )
+    elif args.dataset == "tiny-imagenet":
         nclasses = 200
         train_ds = TinyImageNet(args.datapath, train=True, transform=tiny_train_trans)
         test_ds = TinyImageNet(args.datapath, train=False, transform=tiny_test_trans)
@@ -126,11 +136,13 @@ def run():
     os.makedirs(savedir, exist_ok=True)
     np.save(savedir + "/keep.npy", keep_bool)
     torch.save(m.state_dict(), savedir + "/model.pt")
-    
+
     save_target_train_test_accuracy(m, train_dl, test_dl, args)
     all_loader = get_train_loader(args.dataset, dpath=args.datapath, batchsize=128)
-    inference_and_score(args.dataset, args.datapath, savedir, args.n_queries, all_loader, m)
-    
+    inference_and_score(
+        args.dataset, args.datapath, savedir, args.n_queries, all_loader, m
+    )
+
 
 if __name__ == "__main__":
     run()

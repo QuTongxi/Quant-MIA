@@ -11,9 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# Modified copy by Chenxiang Zhang (orientino) of the original:
-# https://github.com/tensorflow/privacy/tree/master/research/mi_lira_2021
+
 
 import argparse
 import functools
@@ -25,7 +23,9 @@ import numpy as np
 import scipy.stats
 from sklearn.metrics import auc, roc_curve
 
-import sys; sys.path.append('Utils')
+import sys
+
+sys.path.append("Utils")
 from utils import update_args_from_config
 
 matplotlib.rcParams["pdf.fonttype"] = 42
@@ -41,10 +41,11 @@ parser.add_argument("--name", default="full", type=str)
 temp_args, _ = parser.parse_known_args()
 if temp_args.config:
     args = parser.parse_args([])
-    update_args_from_config(args, config='config.json')
+    update_args_from_config(args, config="config.json")
     args = parser.parse_args(namespace=args)
 else:
     args = parser.parse_args()
+
 
 def sweep(score, x):
     """
@@ -54,8 +55,6 @@ def sweep(score, x):
     acc = np.max(1 - (fpr + (1 - tpr)) / 2)
     return fpr, tpr, auc(fpr, tpr), acc
 
-import numpy as np
-from sklearn.metrics import roc_curve
 
 def get_best_f1_score(x, score):
     """
@@ -69,14 +68,16 @@ def get_best_f1_score(x, score):
     best_precision = 0
 
     for threshold in thresholds:
-        y_pred = (score <= -threshold).astype(int)  # predict positive if score <= -threshold
+        y_pred = (score <= -threshold).astype(
+            int
+        )  # predict positive if score <= -threshold
 
         tp = np.sum((y_pred == 1) & (x == 1))
         fp = np.sum((y_pred == 1) & (x == 0))
         fn = np.sum((y_pred == 0) & (x == 1))
 
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-        recall    = tp / (tp + fn) if (tp + fn) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
 
         if precision + recall == 0:
             f1 = 0
@@ -106,7 +107,7 @@ def load_data():
         keep.append(np.load(os.path.join(args.model_dir, path, "keep.npy")))
     target_scores.append(np.load(args.scores))
     target_keep.append(np.load(args.keep))
-        
+
     scores = np.array(scores)
     keep = np.array(keep)
     target_scores = np.array(target_scores)
@@ -114,13 +115,22 @@ def load_data():
 
     return scores, keep
 
-def generate_ours(keep, scores, check_keep, check_scores, in_size=100000, out_size=100000, fix_variance=False):
+
+def generate_ours(
+    keep,
+    scores,
+    check_keep,
+    check_scores,
+    in_size=100000,
+    out_size=100000,
+    fix_variance=False,
+):
     """
     Fit a two predictive models using keep and scores in order to predict
     if the examples in check_scores were training data or not, using the
     ground truth answer from check_keep.
     """
-    
+
     dat_in = []
     dat_out = []
 
@@ -153,10 +163,19 @@ def generate_ours(keep, scores, check_keep, check_scores, in_size=100000, out_si
 
         prediction.extend(score.mean(1))
         answers.extend(ans)
-    
+
     return prediction, answers
 
-def generate_ours_offline(keep, scores, check_keep, check_scores, in_size=100000, out_size=100000, fix_variance=False):
+
+def generate_ours_offline(
+    keep,
+    scores,
+    check_keep,
+    check_scores,
+    in_size=100000,
+    out_size=100000,
+    fix_variance=False,
+):
     """
     Fit a single predictive model using keep and scores in order to predict
     if the examples in check_scores were training data or not, using the
@@ -189,6 +208,7 @@ def generate_ours_offline(keep, scores, check_keep, check_scores, in_size=100000
         answers.extend(ans)
     return prediction, answers
 
+
 def generate_global(keep, scores, check_keep, check_scores):
     """
     Use a simple global threshold sweep to predict if the examples in
@@ -203,7 +223,10 @@ def generate_global(keep, scores, check_keep, check_scores):
 
     return prediction, answers
 
-def do_plot(fn, keep, scores, ntest, legend="", metric="auc", sweep_fn=sweep, **plot_kwargs):
+
+def do_plot(
+    fn, keep, scores, ntest, legend="", metric="auc", sweep_fn=sweep, **plot_kwargs
+):
     """
     Generate the ROC curves by using ntest models as test models and the rest to train.
     """
@@ -213,13 +236,21 @@ def do_plot(fn, keep, scores, ntest, legend="", metric="auc", sweep_fn=sweep, **
     fpr, tpr, auc, acc = sweep_fn(np.array(prediction), np.array(answers, dtype=bool))
 
     low = tpr[np.where(fpr < 0.001)[0][-1]]
-    
-    f1_score, threshold, prec = get_best_f1_score(np.array(answers, dtype=bool), np.array(prediction))
-    with open('f1_scores.txt', 'a') as f1:
-        f1.write("Name %s Attack %s   F1 Score %.4f, Threshold %.4f, Precision %.4f\n" % (args.name, legend, f1_score, threshold, prec))
 
-    with open('outdata.txt', 'a') as f:
-        f.write("Name %s Attack %s   AUC %.4f, Accuracy %.4f, TPR@0.1%%FPR of %.4f\n" % (args.name, legend, auc, acc, low))
+    f1_score, threshold, prec = get_best_f1_score(
+        np.array(answers, dtype=bool), np.array(prediction)
+    )
+    with open("f1_scores.txt", "a") as f1:
+        f1.write(
+            "Name %s Attack %s   F1 Score %.4f, Threshold %.4f, Precision %.4f\n"
+            % (args.name, legend, f1_score, threshold, prec)
+        )
+
+    with open("outdata.txt", "a") as f:
+        f.write(
+            "Name %s Attack %s   AUC %.4f, Accuracy %.4f, TPR@0.1%%FPR of %.4f\n"
+            % (args.name, legend, auc, acc, low)
+        )
     metric_text = ""
     if metric == "auc":
         metric_text = "auc=%.3f" % auc
@@ -229,16 +260,38 @@ def do_plot(fn, keep, scores, ntest, legend="", metric="auc", sweep_fn=sweep, **
     plt.plot(fpr, tpr, label=legend + metric_text, **plot_kwargs)
     return (acc, auc)
 
+
 def fig_fpr_tpr():
     plt.figure(figsize=(4, 3))
 
     do_plot(generate_ours, keep, scores, 1, "Ours (online)\n", metric="auc")
 
-    do_plot(functools.partial(generate_ours, fix_variance=True), keep, scores, 1, "Ours (online, fixed variance)\n", metric="auc")
+    do_plot(
+        functools.partial(generate_ours, fix_variance=True),
+        keep,
+        scores,
+        1,
+        "Ours (online, fixed variance)\n",
+        metric="auc",
+    )
 
-    do_plot(functools.partial(generate_ours_offline), keep, scores, 1, "Ours (offline)\n", metric="auc")
+    do_plot(
+        functools.partial(generate_ours_offline),
+        keep,
+        scores,
+        1,
+        "Ours (offline)\n",
+        metric="auc",
+    )
 
-    do_plot(functools.partial(generate_ours_offline, fix_variance=True), keep, scores, 1, "Ours (offline, fixed variance)\n", metric="auc")
+    do_plot(
+        functools.partial(generate_ours_offline, fix_variance=True),
+        keep,
+        scores,
+        1,
+        "Ours (offline, fixed variance)\n",
+        metric="auc",
+    )
 
     do_plot(generate_global, keep, scores, 1, "Global threshold\n", metric="auc")
 
@@ -254,16 +307,39 @@ def fig_fpr_tpr():
     plt.savefig("fprtpr.png")
     plt.show()
 
+
 def do_analyze():
     do_plot(generate_ours, keep, scores, 1, "Online\n", metric="auc")
 
-    do_plot(functools.partial(generate_ours, fix_variance=True), keep, scores, 1, "Online fixed\n", metric="auc")
+    do_plot(
+        functools.partial(generate_ours, fix_variance=True),
+        keep,
+        scores,
+        1,
+        "Online fixed\n",
+        metric="auc",
+    )
 
-    do_plot(functools.partial(generate_ours_offline), keep, scores, 1, "Offline\n", metric="auc")
+    do_plot(
+        functools.partial(generate_ours_offline),
+        keep,
+        scores,
+        1,
+        "Offline\n",
+        metric="auc",
+    )
 
-    do_plot(functools.partial(generate_ours_offline, fix_variance=True), keep, scores, 1, "Offline fixed\n", metric="auc")
+    do_plot(
+        functools.partial(generate_ours_offline, fix_variance=True),
+        keep,
+        scores,
+        1,
+        "Offline fixed\n",
+        metric="auc",
+    )
 
-    do_plot(generate_global, keep, scores, 1, "Global threshold\n", metric="auc")    
+    do_plot(generate_global, keep, scores, 1, "Global threshold\n", metric="auc")
+
 
 if __name__ == "__main__":
     load_data()
